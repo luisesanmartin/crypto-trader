@@ -8,20 +8,14 @@ def make_data_dic_bitstamp(data):
     with period as key and symbol as second-level key
     '''
 
-    times = [obs['timestamp'] for obs in data[objects.BITCOIN_SYMBOL]]
+    times = [obs['timestamp'] for obs in data[objects.BITSTAMP_SYMBOLS[0]]]
     symbols = objects.BITSTAMP_SYMBOLS
 
     data_dic = {}
 
     for i, time in enumerate(times):
 
-        try:
-    	    data_dic[int(time)] = {symbol: data[symbol][i] for symbol in symbols if time == data[symbol][i]['timestamp']}
-        except IndexError as e:
-            print(i)
-            print(times)
-            #print(data[symbol])
-            raise(e)
+	    data_dic[int(time)] = {symbol: data[symbol][i] for symbol in symbols if time == data[symbol][i]['timestamp']}
 
     return data_dic
 

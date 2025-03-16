@@ -1,4 +1,3 @@
-BITCOIN_SYMBOL = 'btcusd'
 URL_BITSTAMP = 'https://www.bitstamp.net/api/v2/ohlc/{}/'
 FEE_RATE = 0.004
 BUY_RATE = -.05
