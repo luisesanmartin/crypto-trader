@@ -26,6 +26,7 @@ def main():
 	profits_total = 0
 	periods_run = 0
 	continued_errors = 0
+	total_errors = 0
 
 	# Others
 	sender, to, key = trading_utils.email_credentials()
@@ -51,6 +52,7 @@ def main():
 				print('Collecting the data failed...')
 				print(e)
 				continued_errors += 1
+				total_errors += 1
 				continue
 
 			current_prices = data[0]
@@ -61,7 +63,8 @@ def main():
 				print('Currently not holding...')
 				past_prices = data[1]
 
-				for symbol in symbols:
+				#for symbol in symbols:
+				for symbol in past_prices.keys():
 
 					current_price = current_prices[symbol]
 					past_price = past_prices[symbol]
@@ -98,7 +101,7 @@ def main():
 						break
 
 					else:
-						print(f'No valley detected for {symbol}, not buying (past {past_price}, current {current_price})')
+						print(f'No valley detected for {symbol}, not buying')
 						pass
 			
 			elif hold == 1:
@@ -107,7 +110,11 @@ def main():
 				# We only sell if current price is higher than the
 				# last buy price by the amount in "margin"
 				price_with_margin = price_buy * (1 + sell_rate)
-				current_price = current_prices[symbol]
+				
+				try:
+					current_price = current_prices[symbol]
+				except KeyError:
+					continue
 				
 				if current_price > price_with_margin or \
 		   		   current_price < price_buy * (1+cut_loss_rate):
@@ -148,6 +155,7 @@ def main():
 			# Accuracy tracking:
 			periods_run += 1
 			print('Total periods: {}'.format(periods_run))
+			print(f'Total errors : {total_errors}')
 			print('Total profits: $'+str(round(profits_total, 2)))
 			time.sleep(time_gap-20)
 

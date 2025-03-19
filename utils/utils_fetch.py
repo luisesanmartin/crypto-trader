@@ -12,7 +12,7 @@ def get_api_key(text='API/key.txt'):
 
 def get_data_bitstamp_symbols_now(
     step = objects.GAP_EPOCH,
-    symbols = objects.BITSTAMP_SYMBOLS,
+    symbols = objects.BITSTAMP_SYMBOLS[::-1],
     limit = objects.PERIOD+1
     ):
 
@@ -25,8 +25,15 @@ def get_data_bitstamp_symbols_now(
     data_dic = utils_data.make_data_dic_bitstamp(all_data)
     time = list(data_dic.keys())[-1]
 
-    current_prices = {symbol: float(data_dic[time][symbol]['close']) for symbol in symbols}
-    past_prices = {symbol: utils_data.past_price_symbol_periods(data_dic, symbol, limit-1, time) for symbol in symbols}
+    current_prices = {}
+    past_prices = {}
+    for symbol in symbols:
+
+        try:
+            current_prices[symbol] = float(data_dic[time][symbol]['close'])
+            past_prices[symbol] = utils_data.past_price_symbol_periods(data_dic, symbol, limit-1, time)
+        except KeyError:
+            print(f'Getting the data for {symbol} failed...')
 
     return current_prices, past_prices
 
