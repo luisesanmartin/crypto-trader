@@ -1,9 +1,10 @@
 URL_BITSTAMP = 'https://www.bitstamp.net/api/v2/ohlc/{}/'
 FEE_RATE = 0.004
-BUY_RATE = -.05
-SELL_RATE = .03
-CUT_LOSS_RATE = -.07
-PERIOD = 10
+PERIOD = 30
+BUY_RATE = -.04
+SELL_RATE = .05
+CUT_LOSS_RATE = -.08
+AMOUNT = 300
 GAP_EPOCH = 60 # one minute
 MAX_CONTINUED_ERRORS = 3
 BITSTAMP_SYMBOLS = [

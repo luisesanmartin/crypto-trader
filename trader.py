@@ -12,7 +12,7 @@ def main():
 
 	# Globals and variables
 	symbols = objects.BITSTAMP_SYMBOLS
-	amount = 100
+	amount = objects.AMOUNT
 	fee_rate = objects.FEE_RATE
 	buy_rate = objects.BUY_RATE
 	sell_rate = objects.SELL_RATE
@@ -44,23 +44,23 @@ def main():
 			time_now = utils_data.time_in_string(datetime.now())
 			print("\nIt's {}".format(time_now))
 			
-			# Data
-			try:
-				data = fetch_utils.get_data_bitstamp_symbols_now()
-				continued_errors = 0
-			except (TypeError, KeyError, IndexError, requests.exceptions.ConnectionError) as e:
-				print('Collecting the data failed...')
-				print(e)
-				continued_errors += 1
-				total_errors += 1
-				continue
-
-			current_prices = data[0]
-
 			# Trader in action
 			if hold == 0:
 
 				print('Currently not holding...')
+
+				# Data
+				try:
+					data = fetch_utils.get_data_bitstamp_symbols_now()
+					continued_errors = 0
+				except (TypeError, KeyError, IndexError, requests.exceptions.ConnectionError) as e:
+					print('Collecting the data failed...')
+					print(e)
+					continued_errors += 1
+					total_errors += 1
+					continue
+
+				current_prices = data[0]
 				past_prices = data[1]
 
 				#for symbol in symbols:
@@ -73,7 +73,12 @@ def main():
 					   (buy_rate > 0 and current_price > past_price * (1+buy_rate)):
 
 						print(f'Valley detected in {symbol}!')
-						crypto_quantity = round(amount / current_price, 8)
+						if symbol == 'pepeusd' or symbol == 'xdcusd':
+							crypto_quantity = round(amount / current_price, 1)
+						elif symbol == 'dotusd':
+							crypto_quantity = round(amount / current_price, 2)
+						else:
+							crypto_quantity = round(amount / current_price, 8)
 						buy_order = trading_utils.bs_buy_limit_order(amount=crypto_quantity,
 																 price=current_price,
 																 market_symbol=symbol)
@@ -107,14 +112,21 @@ def main():
 			elif hold == 1:
 				print(f'Currently holding {symbol}...')
 
+				# Data
+				try:
+					data = fetch_utils.get_data_bitstamp_symbols_now(symbols=[symbol])
+					current_price = data[0][symbol]
+					continued_errors = 0
+				except (TypeError, KeyError, IndexError, requests.exceptions.ConnectionError) as e:
+					print('Collecting the data failed...')
+					print(e)
+					continued_errors += 1
+					total_errors += 1
+					continue
+
 				# We only sell if current price is higher than the
 				# last buy price by the amount in "margin"
 				price_with_margin = price_buy * (1 + sell_rate)
-				
-				try:
-					current_price = current_prices[symbol]
-				except KeyError:
-					continue
 				
 				if current_price > price_with_margin or \
 		   		   current_price < price_buy * (1+cut_loss_rate):

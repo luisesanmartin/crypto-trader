@@ -1,15 +1,14 @@
 import objects
 from datetime import datetime
 
-def make_data_dic_bitstamp(data):
+def make_data_dic_bitstamp(data, symbols=objects.BITSTAMP_SYMBOLS):
 
     '''
     Transforms the JSON datasets to a dictionary
     with period as key and symbol as second-level key
     '''
 
-    times = [obs['timestamp'] for obs in data[objects.BITSTAMP_SYMBOLS[-1]]]
-    symbols = objects.BITSTAMP_SYMBOLS
+    times = [obs['timestamp'] for obs in data[symbols[-1]]]
 
     data_dic = {}
 

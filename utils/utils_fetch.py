@@ -22,7 +22,7 @@ def get_data_bitstamp_symbols_now(
     '''
 
     all_data = {symbol: get_data_bitstamp(step=step, crypto_symbol=symbol, limit=limit+5)[-limit:] for symbol in symbols}
-    data_dic = utils_data.make_data_dic_bitstamp(all_data)
+    data_dic = utils_data.make_data_dic_bitstamp(all_data, symbols)
     time = list(data_dic.keys())[-1]
 
     current_prices = {}
