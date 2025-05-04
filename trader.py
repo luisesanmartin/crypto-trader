@@ -35,7 +35,7 @@ def main():
 
 		if continued_errors > max_errors:
 			print("\nWe're getting to many errors. Going to sleep for now...")
-			time.sleep(600)
+			time.sleep(900)
 			continued_errors = 0
 
 		minutes, seconds = utils_data.minute_seconds_now()
@@ -53,7 +53,7 @@ def main():
 				try:
 					data = fetch_utils.get_data_bitstamp_symbols_now()
 					continued_errors = 0
-				except (TypeError, KeyError, IndexError, requests.exceptions.ConnectionError) as e:
+				except Exception as e:
 					print('Collecting the data failed...')
 					print(e)
 					continued_errors += 1
@@ -77,6 +77,8 @@ def main():
 							crypto_quantity = round(amount / current_price, 1)
 						elif symbol == 'dotusd':
 							crypto_quantity = round(amount / current_price, 2)
+						elif symbol == 'suiusd':
+							crypto_quantity = round(amount / current_price, 4)
 						else:
 							crypto_quantity = round(amount / current_price, 8)
 						buy_order = trading_utils.bs_buy_limit_order(amount=crypto_quantity,
