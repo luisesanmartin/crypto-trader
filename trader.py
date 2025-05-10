@@ -137,6 +137,7 @@ def main():
 																price=current_price,
 																market_symbol=symbol)
 					sell_order = sell_order.json()
+					hold = 0
 					try:
 						amount_sold = float(crypto_quantity) * float(sell_order['price'])
 					except KeyError:
@@ -144,6 +145,7 @@ def main():
 						subject = 'Trader bot - Sell order failed'
 						message = f'See sell order below:\n{sell_order}'
 						trading_utils.send_email(message, subject, sender, to, key)
+						print('Sell order failed...')
 						continue
 					fee = amount_sold * fee_rate
 					profits_total -= fee
@@ -156,7 +158,6 @@ def main():
 					print(line2)
 					line3 = 'Profits with this operation (without fee): $'+str(round(profits, 2))
 					print(line3)
-					hold = 0
 					subject = f'Trader bot - Sell order for {symbol}'
 					message = f'{line1}\n{line2}\n{line3}'
 					trading_utils.send_email(message, subject, sender, to, key)
