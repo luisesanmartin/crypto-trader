@@ -20,6 +20,7 @@ def main():
 	periods = objects.PERIOD
 	time_gap = objects.GAP_EPOCH
 	max_errors = objects.MAX_CONTINUED_ERRORS
+	max_loss = objects.MAX_CONTINUED_LOSS
 	
 	# Variables for tracking results
 	hold = 0
@@ -27,6 +28,7 @@ def main():
 	periods_run = 0
 	continued_errors = 0
 	total_errors = 0
+	continued_loss = 0
 
 	# Others
 	sender, to, key = trading_utils.email_credentials()
@@ -37,6 +39,16 @@ def main():
 			print("\nWe're getting to many errors. Going to sleep for now...")
 			time.sleep(900)
 			continued_errors = 0
+
+		if continued_errors >= max_loss:
+			line1 = f"\nWe've had {continued_errors} continued sells with loss"
+			print(line1)
+			line2 = "We're stopping code execution to prevent more losses"
+			print(line2)
+			subject = f'Trader bot - Stopping execution'
+			message = f'{line1}\n{line2}'
+			trading_utils.send_email(message, subject, sender, to, key)
+			raise RuntimeError(line2)
 
 		minutes, seconds = utils_data.minute_seconds_now()
 
@@ -119,7 +131,7 @@ def main():
 					data = fetch_utils.get_data_bitstamp_symbols_now(symbols=[symbol])
 					current_price = data[0][symbol]
 					continued_errors = 0
-				except (TypeError, KeyError, IndexError, requests.exceptions.ConnectionError) as e:
+				except Exception as e:
 					print('Collecting the data failed...')
 					print(e)
 					continued_errors += 1
@@ -129,9 +141,10 @@ def main():
 				# We only sell if current price is higher than the
 				# last buy price by the amount in "margin"
 				price_with_margin = price_buy * (1 + sell_rate)
+				take_profits = current_price > price_with_margin
+				stop_loss = current_price < price_buy * (1+cut_loss_rate)
 				
-				if current_price > price_with_margin or \
-		   		   current_price < price_buy * (1+cut_loss_rate):
+				if take_profits or stop_loss:
 
 					sell_order = trading_utils.bs_sell_limit_order(amount=crypto_quantity,
 																price=current_price,
@@ -161,6 +174,12 @@ def main():
 					subject = f'Trader bot - Sell order for {symbol}'
 					message = f'{line1}\n{line2}\n{line3}'
 					trading_utils.send_email(message, subject, sender, to, key)
+
+					if stop_loss:
+						continued_loss += 1
+					else:
+						continued_loss = 0
+
 				else:
 					print('Price is not yet higher than the desired margin')
 					print('Last purchase price: ${}'.format(price_buy))
