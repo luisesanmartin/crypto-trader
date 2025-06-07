@@ -87,7 +87,7 @@ def main():
 						print(f'Valley detected in {symbol}!')
 						if symbol == 'pepeusd' or symbol == 'xdcusd':
 							crypto_quantity = round(amount / current_price, 1)
-						elif symbol == 'dotusd':
+						elif symbol == 'dotusd' or symbol == 'dogeusd':
 							crypto_quantity = round(amount / current_price, 2)
 						elif symbol == 'suiusd':
 							crypto_quantity = round(amount / current_price, 4)
@@ -115,7 +115,7 @@ def main():
 						hold = 1
 						subject = f'Trader bot - Valley detected for {symbol}'
 						message = f'Valley detected!\n{line1}\n{line2}'
-						trading_utils.send_email(message, subject, sender, to, key)
+						#trading_utils.send_email(message, subject, sender, to, key)
 
 						break
 
