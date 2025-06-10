@@ -40,8 +40,8 @@ def main():
 			time.sleep(900)
 			continued_errors = 0
 
-		if continued_errors >= max_loss:
-			line1 = f"\nWe've had {continued_errors} continued sells with loss"
+		if continued_loss >= max_loss:
+			line1 = f"\nWe've had {continued_loss} continued sells with loss"
 			print(line1)
 			line2 = "We're stopping code execution to prevent more losses"
 			print(line2)
@@ -91,6 +91,8 @@ def main():
 							crypto_quantity = round(amount / current_price, 2)
 						elif symbol == 'suiusd':
 							crypto_quantity = round(amount / current_price, 4)
+						elif symbol == 'solusd':
+							crypto_quantity = round(amount / current_price, 5)
 						else:
 							crypto_quantity = round(amount / current_price, 8)
 						buy_order = trading_utils.bs_buy_limit_order(amount=crypto_quantity,
