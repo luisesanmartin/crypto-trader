@@ -3,13 +3,6 @@ import json
 import requests
 import utils_data
 
-def get_api_key(text='API/key.txt'):
-
-    with open(text) as file:
-        key = file.read()
-
-    return key
-
 def get_data_bitstamp_symbols_now(
     step = objects.GAP_EPOCH,
     symbols = objects.BITSTAMP_SYMBOLS[::-1],
