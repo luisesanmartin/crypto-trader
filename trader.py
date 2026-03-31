@@ -52,9 +52,10 @@ def main():
 
 		minutes, seconds = utils_data.minute_seconds_now()
 
-		if (minutes+1) % (time_gap/60) == 0 and seconds == 50:
+		if (minutes+1) % (time_gap/60) == 0 and seconds == 3:
 			time_now = utils_data.time_in_string(datetime.now())
-			print("\nIt's {}".format(time_now))
+			time_now_epoch = int(time.time()) - 30
+			print(f"\nIt's {time_now}")
 			
 			# Trader in action
 			if hold == 0:
@@ -63,7 +64,7 @@ def main():
 
 				# Data
 				try:
-					data = fetch_utils.get_data_bitstamp_symbols_now()
+					data = fetch_utils.get_data_bitstamp_symbols_now(end=time_now_epoch)
 					continued_errors = 0
 				except Exception as e:
 					print('Collecting the data failed...')
