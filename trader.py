@@ -1,3 +1,4 @@
+import uuid
 import sys
 sys.path.insert(1, './utils')
 import utils_fetch as fetch_utils
@@ -21,6 +22,7 @@ def main():
 	time_gap = objects.GAP_EPOCH
 	max_errors = objects.MAX_CONTINUED_ERRORS
 	max_loss = objects.MAX_CONTINUED_LOSS
+	max_buy_order_open_periods = objects.MAX_BUY_ORDER_OPEN_PERIODS
 	
 	# Variables for tracking results
 	hold = 0
@@ -29,6 +31,7 @@ def main():
 	continued_errors = 0
 	total_errors = 0
 	continued_loss = 0
+	buy_order_periods_open = 0
 
 	# Others
 	sender, to, key = trading_utils.email_credentials()
@@ -76,7 +79,6 @@ def main():
 				current_prices = data[0]
 				past_prices = data[1]
 
-				#for symbol in symbols:
 				for symbol in past_prices.keys():
 
 					current_price = current_prices[symbol]
@@ -96,9 +98,11 @@ def main():
 							crypto_quantity = round(amount / current_price, 5)
 						else:
 							crypto_quantity = round(amount / current_price, 8)
+						client_order_id = str(uuid.uuid4())
 						buy_order = trading_utils.bs_buy_limit_order(amount=crypto_quantity,
 																 price=current_price,
-																 market_symbol=symbol)
+																 market_symbol=symbol,
+																 client_order_id=client_order_id)
 						buy_order = buy_order.json()
 						try:
 							price_buy = float(buy_order['price'])
@@ -111,13 +115,16 @@ def main():
 						amount_spent = float(crypto_quantity) * price_buy
 						fee = amount_spent * fee_rate
 						profits_total -= fee
-						line1 = 'Sent a limit order to buy '+str(crypto_quantity)+' for $'+str(round(amount_spent, 2))
+						line1 = f'Sent a limit order to buy {crypto_quantity} for ${round(amount_spent, 2)}'
 						print(line1)
-						line2 = 'Purchase price: {}'.format(price_buy)
+						line2 = f'Purchase price: {price_buy}'
 						print(line2)
+						line3 = f'Client order ID: {client_order_id}'
+						print(line3)
 						hold = 1
+						filled_buy_order = False
 						subject = f'Trader bot - Valley detected for {symbol}'
-						message = f'Valley detected!\n{line1}\n{line2}'
+						message = f'Valley detected!\n{line1}\n{line2}\n{line3}'
 						#trading_utils.send_email(message, subject, sender, to, key)
 
 						break
@@ -126,7 +133,32 @@ def main():
 						print(f'No valley detected for {symbol}, not buying')
 						pass
 			
-			elif hold == 1:
+			elif hold == 1 and not filled_buy_order:
+
+				print('Checking order status...')
+				print(f'Client order ID: {client_order_id}')
+
+				order_status = trading_utils.bs_check_order_status(client_order_id)
+				order_status = order_status.json()
+				status = order_status['status']
+
+				if status == 'Finished':
+					print('Buy order was filled!')
+					filled_buy_order = True
+				
+				if status == 'Open' and buy_order_periods_open < max_buy_order_open_periods:
+					print('Buy order is still open...')
+					buy_order_periods_open += 1
+					print(f"It's been open for {buy_order_periods_open} periods")
+				
+				if status == 'Open' and buy_order_periods_open >= max_buy_order_open_periods:
+					print('Buy order has been open for too long. Cancelling order...')
+					cancel_response = trading_utils.bs_cancel_order(client_order_id)
+					print('Order canceled')
+					buy_order_periods_open = 0
+					hold = 0
+	
+			elif hold == 1 and filled_buy_order:
 				print(f'Currently holding {symbol}...')
 
 				# Data
