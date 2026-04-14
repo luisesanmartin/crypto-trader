@@ -98,11 +98,11 @@ def main():
 							crypto_quantity = round(amount / current_price, 5)
 						else:
 							crypto_quantity = round(amount / current_price, 8)
-						client_order_id = str(uuid.uuid4())
+						client_order_id_buy = str(uuid.uuid4())
 						buy_order = trading_utils.bs_buy_limit_order(amount=crypto_quantity,
 																 price=current_price,
 																 market_symbol=symbol,
-																 client_order_id=client_order_id)
+																 client_order_id=client_order_id_buy)
 						buy_order = buy_order.json()
 						try:
 							price_buy = float(buy_order['price'])
@@ -119,7 +119,7 @@ def main():
 						print(line1)
 						line2 = f'Purchase price: {price_buy}'
 						print(line2)
-						line3 = f'Client order ID: {client_order_id}'
+						line3 = f'Client order ID: {client_order_id_buy}'
 						print(line3)
 						hold = 1
 						filled_buy_order = False
@@ -136,24 +136,36 @@ def main():
 			elif hold == 1 and not filled_buy_order:
 
 				print('Checking order status...')
-				print(f'Client order ID: {client_order_id}')
+				print(f'Client order ID: {client_order_id_buy}')
 
-				order_status = trading_utils.bs_check_order_status(client_order_id)
+				order_status = trading_utils.bs_check_order_status(client_order_id_buy)
 				order_status = order_status.json()
 				status = order_status['status']
 
 				if status == 'Finished':
 					print('Buy order was filled!')
 					filled_buy_order = True
+					stop_loss = False
+					print('Sending take profit order...')
+					sell_price = price_buy * (1 + sell_rate)
+					client_order_id_sell = str(uuid.uuid4())
+					sell_order = trading_utils.bs_sell_limit_order(amount=crypto_quantity,
+																price=sell_price,
+																market_symbol=symbol,
+																client_order_id=client_order_id_sell)
+					sell_order = sell_order.json()
+					print(f'Sent a limit order to sell {crypto_quantity} for ${round(sell_price, 2)}')
+					print(f'Sell price: ${sell_price}')
+					
 				
-				if status == 'Open' and buy_order_periods_open < max_buy_order_open_periods:
+				elif status == 'Open' and buy_order_periods_open < max_buy_order_open_periods:
 					print('Buy order is still open...')
 					buy_order_periods_open += 1
 					print(f"It's been open for {buy_order_periods_open} periods")
 				
-				if status == 'Open' and buy_order_periods_open >= max_buy_order_open_periods:
+				elif status == 'Open' and buy_order_periods_open >= max_buy_order_open_periods:
 					print('Buy order has been open for too long. Cancelling order...')
-					cancel_response = trading_utils.bs_cancel_order(client_order_id)
+					cancel_response = trading_utils.bs_cancel_order(client_order_id_buy)
 					print('Order canceled')
 					buy_order_periods_open = 0
 					hold = 0
@@ -161,30 +173,40 @@ def main():
 			elif hold == 1 and filled_buy_order:
 				print(f'Currently holding {symbol}...')
 
-				# Data
-				try:
-					data = fetch_utils.get_data_bitstamp_symbols_now(symbols=[symbol])
-					current_price = data[0][symbol]
-					continued_errors = 0
-				except Exception as e:
-					print('Collecting the data failed...')
-					print(e)
-					continued_errors += 1
-					total_errors += 1
-					continue
+				# Checking take profit order status
+				order_status = trading_utils.bs_check_order_status(client_order_id_sell)
+				order_status = order_status.json()
+				status = order_status['status']
+				take_profit = status == 'Finished'
 
-				# We only sell if current price is higher than the
-				# last buy price by the amount in "margin"
-				price_with_margin = price_buy * (1 + sell_rate)
-				take_profits = current_price > price_with_margin
-				stop_loss = current_price < price_buy * (1+cut_loss_rate)
+				if take_profit:
+					print('Take profit order was filled!')			
+				else:
+					print('Take profit order is still open...')
+
+					# Check if we are in loss and if the stop loss order should be sent
+					# Data
+					try:
+						data = fetch_utils.get_data_bitstamp_symbols_now(symbols=[symbol])
+						current_price = data[0][symbol]
+						continued_errors = 0
+					except Exception as e:
+						print('Collecting the data failed...')
+						print(e)
+						continued_errors += 1
+						total_errors += 1
+						continue
+
+					stop_loss = current_price < price_buy * (1 + cut_loss_rate)
 				
-				if take_profits or stop_loss:
+					if stop_loss:
 
-					sell_order = trading_utils.bs_sell_limit_order(amount=crypto_quantity,
-																price=current_price,
-																market_symbol=symbol)
-					sell_order = sell_order.json()
+						sell_order = trading_utils.bs_sell_limit_order(amount=crypto_quantity,
+																	price=current_price,
+																	market_symbol=symbol)
+						sell_order = sell_order.json()
+
+				if take_profit or stop_loss:
 					hold = 0
 					try:
 						amount_sold = float(crypto_quantity) * float(sell_order['price'])
@@ -200,11 +222,11 @@ def main():
 					profits = amount_sold - amount_spent
 					profits_total += profits
 					amount = amount_sold
-					line1 = 'Sent a limit order to sell '+str(crypto_quantity)+' for $'+str(round(amount_sold, 2))
+					line1 = f'Sold {crypto_quantity} for ${round(amount_sold, 2)}'
 					print(line1)
-					line2 = 'Sell price: ${}'.format(sell_order['price'])
+					line2 = f'Sell price: ${sell_order["price"]}'
 					print(line2)
-					line3 = 'Profits with this operation (without fee): $'+str(round(profits, 2))
+					line3 = f'Profits with this operation (without fee): ${round(profits, 2)}'
 					print(line3)
 					subject = f'Trader bot - Sell order for {symbol}'
 					message = f'{line1}\n{line2}\n{line3}'
@@ -218,7 +240,7 @@ def main():
 				else:
 					print('Price is not yet higher than the desired margin')
 					print('Last purchase price: ${}'.format(price_buy))
-					print('Price with margin: ${}'.format(price_with_margin))
+					print('Price with margin: ${}'.format(sell_price))
 					print(f'Current price: ${current_price}')
 
 			# Accuracy tracking:

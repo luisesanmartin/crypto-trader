@@ -57,7 +57,7 @@ def send_email(message, subject, sender, to, key):
 
     return True
 
-def bs_sell_limit_order(amount, price, market_symbol, credentials=bs_credentials()):
+def bs_sell_limit_order(amount, price, market_symbol, client_order_id=None, credentials=bs_credentials()):
 
     '''
     Checks account balance
@@ -75,6 +75,8 @@ def bs_sell_limit_order(amount, price, market_symbol, credentials=bs_credentials
         'amount': amount,
         'price': price
     }
+    if client_order_id:
+        payload['client_order_id'] = client_order_id
     url_path_query = '/api/v2/sell/{}/'.format(market_symbol)
 
     payload_string = urlencode(payload)
