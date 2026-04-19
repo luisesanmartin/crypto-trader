@@ -169,6 +169,7 @@ def main():
 					print('Order canceled')
 					buy_order_periods_open = 0
 					hold = 0
+					profits_total += fee
 	
 			elif hold == 1 and filled_buy_order:
 				print(f'Currently holding {symbol}...')

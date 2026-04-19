@@ -2,7 +2,7 @@ URL_BITSTAMP = 'https://www.bitstamp.net/api/v2/ohlc/{}/'
 FEE_RATE = 0.004
 PERIOD = 5
 BUY_RATE = -.03
-SELL_RATE = .06
+SELL_RATE = .05
 CUT_LOSS_RATE = -.05
 AMOUNT = 300
 GAP_EPOCH = 60 # one minute
@@ -14,20 +14,15 @@ BITSTAMP_SYMBOLS = [
 	'ethusd',
 	'xrpusd',
 	'solusd',
-	'ltcusd',
-	'aaveusd',
-	'xlmusd',
-	'suiusd',
 	'dogeusd',
-	'hbarusd',
-	'adausd',
-	'linkusd',
+	'aaveusd',
+	'xplusd',
+	'hypeusd',
 	'avaxusd',
-	'xdcusd',
-	'shibusd',
-	'dotusd',
-	#'maticusd',
-	'uniusd',
-	'ftmusd',
-	'pepeusd'
+	'wifusd',
+	'xlmusd',
+	'enausd',
+	'pnutusd',
+	'linkusd',
+	'pepeusd'	
 	]
